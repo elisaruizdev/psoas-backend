@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { PatientsModule } from './patients/patients.module';
+import { PhysiosModule } from './physios/physios.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { PatientsModule } from './patients/patients.module';
       synchronize: true,
     }),
     PatientsModule,
+    PhysiosModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
