@@ -1,20 +1,32 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
+import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UsersModule } from '../users/users.module';
+import { Physios } from '../physios/entities/physios.entity';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
-    UsersModule,
-    PassportModule,
-    JwtModule.register({
-      secret: 'test',
-      signOptions: { expiresIn: '24h' },
+    ConfigModule,
+    TypeOrmModule.forFeature([Physios]),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService): JwtModuleOptions => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRATION') ||
+            '7d') as any,
+        },
+      }),
+      inject: [ConfigService],
     }),
+    EmailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService],
+  exports: [AuthService],
 })
 export class AuthModule {}
