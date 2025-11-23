@@ -17,7 +17,7 @@ export class PatientsController {
   }
 
   @Get(':id')
-  findOnePatient(@Param('id') id: string) {
-    return this.patientsService.findOnePatient(id);
+  findOne(@Param('id') id: string) {
+    return this.patientsService.findOne(id);
   }
 }
