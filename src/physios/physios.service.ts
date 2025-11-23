@@ -75,4 +75,34 @@ export class PhysiosService {
       message: 'Fisioterapeuta rechazado correctamente',
     };
   }
+
+  async findOne(id: number): Promise<Physios> {
+    const physio = await this.physiosRepository.findOne({
+      where: { id_physio: id },
+    });
+
+    if (!physio) {
+      throw new NotFoundException('Fisioterapeuta no encontrado');
+    }
+
+    return physio;
+  }
+
+  async update(id: number, updateData: Partial<Physios>): Promise<Physios> {
+    const physio = await this.findOne(id);
+
+    Object.assign(physio, updateData);
+
+    return await this.physiosRepository.save(physio);
+  }
+
+  async remove(id: number): Promise<any> {
+    const physio = await this.findOne(id);
+
+    await this.physiosRepository.remove(physio);
+
+    return {
+      message: 'Fisioterapeuta eliminado correctamente',
+    };
+  }
 }

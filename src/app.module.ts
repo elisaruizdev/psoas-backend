@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PatientsModule } from './patients/patients.module';
 import { PhysiosModule } from './physios/physios.module';
 import { AuthModule } from './auth/auth.module';
+import { AppointmentsModule } from './appointment/appointments.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AuthModule } from './auth/auth.module';
     PatientsModule,
     PhysiosModule,
     AuthModule,
+    AppointmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
