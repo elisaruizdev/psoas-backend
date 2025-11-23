@@ -1,17 +1,23 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { PatientsService } from './patients.service';
+import { CreatePatientDto } from './dto/create-patient/create-patient.dto';
 
-@Controller('patients') // Ruta base para pacientes
+@Controller('patients')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
-  @Get() // GET /patients
+  @Post()
+  create(@Body() createPatientDto: CreatePatientDto) {
+    return this.patientsService.create(createPatientDto);
+  }
+
+  @Get()
   findAllPatients() {
     return this.patientsService.findAllPatients();
   }
 
-  @Get(':id') // GET /patients/:id
-  findOnePatient(id: number) {
+  @Get(':id')
+  findOnePatient(@Param('id') id: string) {
     return this.patientsService.findOnePatient(id);
   }
 }

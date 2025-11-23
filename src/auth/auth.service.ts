@@ -57,21 +57,9 @@ export class AuthService {
 
     await this.physiosRepository.save(newPhysio);
 
-    try {
-      await this.emailService.sendVerificationEmail(
-        email,
-        name,
-        verificationToken,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error) {
-      await this.physiosRepository.remove(newPhysio);
-      throw new BadRequestException('Error al enviar el email de verificación');
-    }
-
     return {
       message:
-        'Registro exitoso. Por favor, verifica tu email para activar tu cuenta.',
+        'Registro exitoso. Tu solicitud está pendiente de aprobación por el administrador.',
     };
   }
 
