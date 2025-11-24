@@ -7,6 +7,7 @@ import { PatientsModule } from './patients/patients.module';
 import { PhysiosModule } from './physios/physios.module';
 import { AuthModule } from './auth/auth.module';
 import { AppointmentsModule } from './appointment/appointments.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { AppointmentsModule } from './appointment/appointments.module';
     PhysiosModule,
     AuthModule,
     AppointmentsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
