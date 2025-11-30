@@ -20,7 +20,6 @@ export class DiagnosesService {
   ) {}
 
   async create(createDiagnosisDto: CreateDiagnosisDto): Promise<Diagnosis> {
-    // Verificar que el paciente existe
     await this.patientsService.findOne(createDiagnosisDto.patient_id);
 
     const diagnosis = this.diagnosesRepository.create(createDiagnosisDto);
@@ -28,7 +27,6 @@ export class DiagnosesService {
   }
 
   async findAllByPatient(patientId: string): Promise<Diagnosis[]> {
-    // Verificar que el paciente existe
     await this.patientsService.findOne(patientId);
 
     return await this.diagnosesRepository.find({
