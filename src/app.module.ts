@@ -8,6 +8,9 @@ import { PhysiosModule } from './physios/physios.module';
 import { AuthModule } from './auth/auth.module';
 import { AppointmentsModule } from './appointment/appointments.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { DiagnosesModule } from './diagnoses/diagnoses.module';
+import { TreatmentsModule } from './treatments/treatments.module';
+import { SessionsModule } from './sessions/sessions.module';
 
 @Module({
   imports: [
@@ -29,6 +32,9 @@ import { DashboardModule } from './dashboard/dashboard.module';
     AuthModule,
     AppointmentsModule,
     DashboardModule,
+    DiagnosesModule,
+    TreatmentsModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
