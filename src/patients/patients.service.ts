@@ -6,7 +6,8 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Patient } from './entities/patient.entity';
 import { Repository } from 'typeorm';
-import { CreatePatientDto } from './dto/create-patient/create-patient.dto';
+import { CreatePatientDto } from './dto/create-patient.dto';
+import { UpdatePatientDto } from './dto/update-patient.dto';
 
 @Injectable()
 export class PatientsService {
@@ -43,5 +44,54 @@ export class PatientsService {
     }
 
     return patient;
+  }
+
+  async update(
+    id: string,
+    updatePatientDto: UpdatePatientDto,
+  ): Promise<Patient> {
+    const patient = await this.findOne(id);
+    if (
+      updatePatientDto.identifier &&
+      updatePatientDto.identifier !== patient.identifier
+    ) {
+      const existingWithIdentifier = await this.patientsRepository.findOne({
+        where: { identifier: updatePatientDto.identifier },
+      });
+
+      if (existingWithIdentifier) {
+        throw new ConflictException('Ya existe un paciente con ese DNI/NIE');
+      }
+    }
+
+    if (updatePatientDto.email && updatePatientDto.email !== patient.email) {
+      const existingWithEmail = await this.patientsRepository.findOne({
+        where: { email: updatePatientDto.email },
+      });
+
+      if (existingWithEmail) {
+        throw new ConflictException('Ya existe un paciente con ese email');
+      }
+    }
+    if (
+      updatePatientDto.status === 'inactive' &&
+      !updatePatientDto.discharge_reason
+    ) {
+      throw new ConflictException(
+        'Debe proporcionar una razón de alta al marcar el paciente como inactivo',
+      );
+    }
+
+    if (updatePatientDto.status === 'inactive') {
+      updatePatientDto['discharge_date'] = new Date();
+    }
+
+    await this.patientsRepository.update(id, updatePatientDto);
+    return this.findOne(id);
+  }
+
+  async remove(id: string): Promise<void> {
+    const patient = await this.findOne(id);
+    await this.patientsRepository.remove(patient);
   }
 }
