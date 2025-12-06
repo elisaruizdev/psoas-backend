@@ -30,10 +30,10 @@ export class EmailService {
     const mailOptions = {
       from: this.configService.get<string>('MAIL_FROM'),
       to: email,
-      subject: 'Verifica tu cuenta de Fisiogest',
+      subject: 'Verifica tu cuenta de psoas',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #5b21b6;">¡Bienvenido a Fisiogest, ${name}!</h2>
+          <h2 style="color: #5b21b6;">¡Bienvenido a psoas, ${name}!</h2>
           <p>Gracias por registrarte en nuestra plataforma.</p>
           <p>Para activar tu cuenta, haz clic en el siguiente botón:</p>
           <div style="text-align: center; margin: 30px 0;">
@@ -67,7 +67,7 @@ export class EmailService {
     const mailOptions = {
       from: this.configService.get<string>('MAIL_FROM'),
       to: email,
-      subject: 'Recuperar contraseña - Fisiogest',
+      subject: 'Recuperar contraseña - psoas',
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #5b21b6;">Hola ${name},</h2>
