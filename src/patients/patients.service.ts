@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Patient } from './entities/patient.entity';
@@ -17,21 +18,40 @@ export class PatientsService {
   ) {}
 
   async create(createPatientDto: CreatePatientDto): Promise<Patient> {
-    const existingPatient = await this.patientsRepository.findOne({
+    const existingIdentifier = await this.patientsRepository.findOne({
       where: { identifier: createPatientDto.identifier },
     });
 
-    if (existingPatient) {
-      throw new ConflictException('Ya existe un paciente con ese DNI/NIE');
+    if (existingIdentifier) {
+      throw new ConflictException(
+        `Ya existe un paciente con el DNI/NIE: ${createPatientDto.identifier}`,
+      );
     }
+    try {
+      const patient = this.patientsRepository.create(createPatientDto);
+      return await this.patientsRepository.save(patient);
+    } catch (error) {
+      console.error('Error al crear paciente:', error);
 
-    const patient = this.patientsRepository.create(createPatientDto);
-    const saved = await this.patientsRepository.save(patient);
-    return saved;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error.code === '23505') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+        if (error.constraint && error.constraint.includes('identifier')) {
+          throw new ConflictException('Ya existe un paciente con ese DNI/NIE');
+        }
+        throw new ConflictException('Ya existe un paciente con esos datos');
+      }
+
+      throw new InternalServerErrorException(
+        'Error al crear el paciente. Inténtalo de nuevo.',
+      );
+    }
   }
 
   findAllPatients(): Promise<Patient[]> {
-    return this.patientsRepository.find();
+    return this.patientsRepository.find({
+      order: { surname: 'ASC' },
+    });
   }
 
   async findOne(id: string): Promise<Patient> {
@@ -63,16 +83,6 @@ export class PatientsService {
         throw new ConflictException('Ya existe un paciente con ese DNI/NIE');
       }
     }
-
-    if (updatePatientDto.email && updatePatientDto.email !== patient.email) {
-      const existingWithEmail = await this.patientsRepository.findOne({
-        where: { email: updatePatientDto.email },
-      });
-
-      if (existingWithEmail) {
-        throw new ConflictException('Ya existe un paciente con ese email');
-      }
-    }
     if (
       updatePatientDto.status === 'inactive' &&
       !updatePatientDto.discharge_reason
@@ -81,7 +91,6 @@ export class PatientsService {
         'Debe proporcionar una razón de alta al marcar el paciente como inactivo',
       );
     }
-
     if (updatePatientDto.status === 'inactive') {
       updatePatientDto['discharge_date'] = new Date();
     }
