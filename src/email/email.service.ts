@@ -1,13 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
+import { Transporter } from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-  private resend: Resend;
+  private transporter: Transporter;
 
   constructor(private configService: ConfigService) {
-    this.resend = new Resend(this.configService.get<string>('RESEND_API_KEY'));
+    this.transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: this.configService.get<string>('MAIL_USER'),
+        pass: this.configService.get<string>('MAIL_PASSWORD'),
+      },
+    });
   }
 
   async sendVerificationEmail(
@@ -17,13 +26,13 @@ export class EmailService {
   ): Promise<void> {
     const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/verificar-registro?token=${token}`;
 
-    await this.resend.emails.send({
-      from: 'Psoas <onboarding@resend.dev>',
+    const mailOptions = {
+      from: this.configService.get<string>('MAIL_USER'),
       to: email,
       subject: 'Verifica tu cuenta de psoas',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #5b21b6;">¡Bienvenido a Psoas, ${name}!</h2>
+          <h2 style="color: #5b21b6;">¡Bienvenido a psoas, ${name}!</h2>
           <p>Gracias por registrarte en nuestra plataforma.</p>
           <p>Para activar tu cuenta, haz clic en el siguiente botón:</p>
           <div style="text-align: center; margin: 30px 0;">
@@ -41,7 +50,9 @@ export class EmailService {
           </p>
         </div>
       `,
-    });
+    };
+
+    await this.transporter.sendMail(mailOptions);
   }
 
   async sendPasswordResetEmail(
@@ -51,30 +62,32 @@ export class EmailService {
   ): Promise<void> {
     const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/resetear-contraseña?token=${token}`;
 
-    await this.resend.emails.send({
-      from: 'Psoas <onboarding@resend.dev>',
+    const mailOptions = {
+      from: this.configService.get<string>('MAIL_USER'),
       to: email,
       subject: 'Recuperar contraseña - psoas',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #5b21b6;">Hola ${name},</h2>
-          <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
-          <p>Para crear una nueva contraseña, haz clic en el siguiente botón:</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
-               style="background-color: #5b21b6; color: white; padding: 12px 30px; 
-                      text-decoration: none; border-radius: 5px; display: inline-block;">
-              Restablecer contraseña
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            Si no has solicitado restablecer tu contraseña, puedes ignorar este email.
-          </p>
-          <p style="color: #666; font-size: 14px;">
-            Este enlace expirará en 1 hora.
-          </p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #5b21b6;">Hola ${name},</h2>
+        <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+        <p>Para crear una nueva contraseña, haz clic en el siguiente botón:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" 
+             style="background-color: #5b21b6; color: white; padding: 12px 30px; 
+                    text-decoration: none; border-radius: 5px; display: inline-block;">
+            Restablecer contraseña
+          </a>
         </div>
-      `,
-    });
+        <p style="color: #666; font-size: 14px;">
+          Si no has solicitado restablecer tu contraseña, puedes ignorar este email.
+        </p>
+        <p style="color: #666; font-size: 14px;">
+          Este enlace expirará en 1 hora.
+        </p>
+      </div>
+    `,
+    };
+
+    await this.transporter.sendMail(mailOptions);
   }
 }
