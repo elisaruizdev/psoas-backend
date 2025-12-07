@@ -39,14 +39,22 @@ export class PhysiosService {
           'No hay token de verificación para este fisioterapeuta',
         );
       }
+
+      console.log('Intentando enviar email a:', physio.email);
+
       await this.emailService.sendVerificationEmail(
         physio.email,
         physio.name,
         physio.verification_token,
       );
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+      console.log('Email enviado exitosamente');
     } catch (error) {
-      throw new BadRequestException('Error al enviar el email de verificación');
+      console.error('ERROR AL ENVIAR EMAIL:', error);
+      throw new BadRequestException(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        'Error al enviar el email de verificación: ' + error.message,
+      );
     }
 
     return {

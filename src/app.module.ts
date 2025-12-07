@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PatientsModule } from './patients/patients.module';
 import { PhysiosModule } from './physios/physios.module';
 import { AuthModule } from './auth/auth.module';
@@ -17,15 +17,37 @@ import { SessionsModule } from './sessions/sessions.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: true,
-      ssl:
-        process.env.NODE_ENV === 'production'
-          ? { rejectUnauthorized: false }
-          : false,
+
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+
+      inject: [ConfigService],
+
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+        const isProduction =
+          configService.get<string>('NODE_ENV') === 'production';
+        const useUrl = !!databaseUrl;
+
+        return {
+          type: 'postgres',
+          url: useUrl ? databaseUrl : undefined,
+          host: !useUrl ? configService.get<string>('DB_HOST') : undefined,
+          port: !useUrl ? configService.get<number>('DB_PORT') : undefined,
+          username: !useUrl
+            ? configService.get<string>('DB_USERNAME')
+            : undefined,
+          password: !useUrl
+            ? configService.get<string>('DB_PASSWORD')
+            : undefined,
+          database: !useUrl
+            ? configService.get<string>('DB_DATABASE')
+            : undefined,
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: true,
+          ssl: isProduction ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
     PatientsModule,
     PhysiosModule,
