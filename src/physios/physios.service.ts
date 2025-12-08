@@ -1,116 +1,99 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Physios } from './entities/physios.entity';
-import { EmailService } from '../email/email.service';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import sgMail from '@sendgrid/mail';
 
 @Injectable()
-export class PhysiosService {
-  constructor(
-    @InjectRepository(Physios)
-    private physiosRepository: Repository<Physios>,
-    private emailService: EmailService,
-  ) {}
-
-  findAll(): Promise<Physios[]> {
-    return this.physiosRepository.find();
+export class EmailService {
+  constructor(private configService: ConfigService) {
+    const apiKey = this.configService.get<string>('SENDGRID_API_KEY');
+    if (apiKey) {
+      sgMail.setApiKey(apiKey);
+    }
   }
 
-  async approvePhysio(id: number): Promise<any> {
-    const physio = await this.physiosRepository.findOne({
-      where: { id_physio: id },
-    });
+  async sendVerificationEmail(
+    email: string,
+    name: string,
+    token: string,
+  ): Promise<void> {
+    const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/verificar-registro?token=${token}`;
 
-    if (!physio) {
-      throw new NotFoundException('Fisioterapeuta no encontrado');
-    }
-
-    if (physio.status !== 'pending_verification') {
-      throw new BadRequestException('Este fisioterapeuta ya ha sido procesado');
-    }
+    const msg = {
+      to: email,
+      from:
+        this.configService.get<string>('MAIL_USER') || 'elisaruizdev@gmail.com',
+      subject: 'Verifica tu cuenta de psoas',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #5b21b6;">¡Bienvenido a psoas, ${name}!</h2>
+          <p>Gracias por registrarte en nuestra plataforma.</p>
+          <p>Para activar tu cuenta, haz clic en el siguiente botón:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}" 
+               style="background-color: #5b21b6; color: white; padding: 12px 30px; 
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+              Verificar mi cuenta
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            Si no has creado esta cuenta, puedes ignorar este email.
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            Este enlace expirará en 24 horas.
+          </p>
+        </div>
+      `,
+    };
 
     try {
-      if (!physio.verification_token) {
-        throw new BadRequestException(
-          'No hay token de verificación para este fisioterapeuta',
-        );
-      }
-
-      console.log('Intentando enviar email a:', physio.email);
-
-      await this.emailService.sendVerificationEmail(
-        physio.email,
-        physio.name,
-        physio.verification_token,
-      );
-
-      console.log('Email enviado exitosamente');
+      await sgMail.send(msg);
+      console.log('Email enviado exitosamente a:', email);
     } catch (error) {
-      console.error('ERROR AL ENVIAR EMAIL:', error);
-      throw new BadRequestException(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        'Error al enviar el email de verificación: ' + error.message,
-      );
+      console.error('Error al enviar email:', error);
+      throw error;
     }
+  }
 
-    return {
-      message:
-        'Fisioterapeuta aprobado. Se ha enviado el email de verificación.',
+  async sendPasswordResetEmail(
+    email: string,
+    name: string,
+    token: string,
+  ): Promise<void> {
+    const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/resetear-contraseña?token=${token}`;
+
+    const msg = {
+      to: email,
+      from:
+        this.configService.get<string>('MAIL_USER') || 'elisaruizdev@gmail.com',
+      subject: 'Recuperar contraseña - psoas',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #5b21b6;">Hola ${name},</h2>
+          <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+          <p>Para crear una nueva contraseña, haz clic en el siguiente botón:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" 
+               style="background-color: #5b21b6; color: white; padding: 12px 30px; 
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+              Restablecer contraseña
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            Si no has solicitado restablecer tu contraseña, puedes ignorar este email.
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            Este enlace expirará en 1 hora.
+          </p>
+        </div>
+      `,
     };
-  }
 
-  async rejectPhysio(id: number): Promise<any> {
-    const physio = await this.physiosRepository.findOne({
-      where: { id_physio: id },
-    });
-
-    if (!physio) {
-      throw new NotFoundException('Fisioterapeuta no encontrado');
+    try {
+      await sgMail.send(msg);
+      console.log('Email de recuperación enviado a:', email);
+    } catch (error) {
+      console.error('Error al enviar email:', error);
+      throw error;
     }
-
-    if (physio.status !== 'pending_verification') {
-      throw new BadRequestException('Este fisioterapeuta ya ha sido procesado');
-    }
-
-    physio.status = 'rejected';
-    await this.physiosRepository.save(physio);
-
-    return {
-      message: 'Fisioterapeuta rechazado correctamente',
-    };
-  }
-
-  async findOne(id: number): Promise<Physios> {
-    const physio = await this.physiosRepository.findOne({
-      where: { id_physio: id },
-    });
-
-    if (!physio) {
-      throw new NotFoundException('Fisioterapeuta no encontrado');
-    }
-
-    return physio;
-  }
-
-  async update(id: number, updateData: Partial<Physios>): Promise<Physios> {
-    const physio = await this.findOne(id);
-
-    Object.assign(physio, updateData);
-
-    return await this.physiosRepository.save(physio);
-  }
-
-  async remove(id: number): Promise<any> {
-    const physio = await this.findOne(id);
-
-    await this.physiosRepository.remove(physio);
-
-    return {
-      message: 'Fisioterapeuta eliminado correctamente',
-    };
   }
 }
