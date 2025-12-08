@@ -25,6 +25,24 @@ export class EmailService {
     name: string,
     token: string,
   ): Promise<void> {
+    // LOGS DE DEBUG
+    console.log('=== EMAIL SERVICE CONFIG ===');
+    console.log('MAIL_USER:', this.configService.get<string>('MAIL_USER'));
+    console.log(
+      'GMAIL_CLIENT_ID exists:',
+      !!this.configService.get<string>('GMAIL_CLIENT_ID'),
+    );
+    console.log(
+      'GMAIL_CLIENT_SECRET exists:',
+      !!this.configService.get<string>('GMAIL_CLIENT_SECRET'),
+    );
+    console.log(
+      'GMAIL_REFRESH_TOKEN exists:',
+      !!this.configService.get<string>('GMAIL_REFRESH_TOKEN'),
+    );
+    console.log('Transporter config:', this.transporter.options);
+    console.log('============================');
+
     const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/verificar-registro?token=${token}`;
 
     const mailOptions = {
