@@ -1,21 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as sgMail from '@sendgrid/mail';
 
 @Injectable()
 export class EmailService {
-  constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('SENDGRID_API_KEY');
-    if (apiKey) {
-      sgMail.setApiKey(apiKey);
-    }
-  }
+  constructor(private configService: ConfigService) {}
 
   async sendVerificationEmail(
     email: string,
     name: string,
     token: string,
   ): Promise<void> {
+    const sgMail = await import('@sendgrid/mail');
+    sgMail.default.setApiKey(
+      this.configService.get<string>('SENDGRID_API_KEY')!,
+    );
+
     const verificationUrl = `${this.configService.get<string>('FRONTEND_URL')}/verificar-registro?token=${token}`;
 
     const msg = {
@@ -46,7 +45,7 @@ export class EmailService {
     };
 
     try {
-      await sgMail.send(msg);
+      await sgMail.default.send(msg);
       console.log('Email enviado exitosamente a:', email);
     } catch (error) {
       console.error('Error al enviar email:', error);
@@ -59,6 +58,11 @@ export class EmailService {
     name: string,
     token: string,
   ): Promise<void> {
+    const sgMail = await import('@sendgrid/mail');
+    sgMail.default.setApiKey(
+      this.configService.get<string>('SENDGRID_API_KEY')!,
+    );
+
     const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/resetear-contraseña?token=${token}`;
 
     const msg = {
@@ -89,7 +93,7 @@ export class EmailService {
     };
 
     try {
-      await sgMail.send(msg);
+      await sgMail.default.send(msg);
       console.log('Email de recuperación enviado a:', email);
     } catch (error) {
       console.error('Error al enviar email:', error);
