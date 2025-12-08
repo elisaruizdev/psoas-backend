@@ -15,7 +15,9 @@ export class EmailService {
         user: this.configService.get<string>('MAIL_USER'),
         clientId: this.configService.get<string>('GMAIL_CLIENT_ID'),
         clientSecret: this.configService.get<string>('GMAIL_CLIENT_SECRET'),
-        refreshToken: this.configService.get<string>('GMAIL_REFRESH_TOKEN'),
+        refreshToken: this.configService
+          .get<string>('GMAIL_REFRESH_TOKEN')
+          ?.trim(),
       },
     });
   }
