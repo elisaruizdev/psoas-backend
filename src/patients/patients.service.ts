@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Patient } from './entities/patient.entity';
@@ -50,7 +51,8 @@ export class PatientsService {
 
   findAllPatients(): Promise<Patient[]> {
     return this.patientsRepository.find({
-      order: { surname: 'ASC' },
+      where: { status: 'active' },
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -100,7 +102,27 @@ export class PatientsService {
   }
 
   async remove(id: string): Promise<void> {
-    const patient = await this.findOne(id);
-    await this.patientsRepository.remove(patient);
+    try {
+      const patient = await this.patientsRepository.findOne({
+        where: { id },
+      });
+
+      if (!patient) {
+        throw new NotFoundException(`Paciente con ID ${id} no encontrado`);
+      }
+      patient.status = 'inactive';
+      patient.discharge_date = new Date();
+      patient.discharge_reason = 'Eliminado por el usuario';
+
+      await this.patientsRepository.save(patient);
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (error.code === '23503') {
+        throw new BadRequestException(
+          'No se puede eliminar el paciente porque tiene información relacionada (citas, diagnósticos, sesiones, etc.)',
+        );
+      }
+      throw error;
+    }
   }
 }
