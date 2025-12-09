@@ -142,15 +142,20 @@ export class AuthService {
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const { email } = forgotPasswordDto;
 
+    console.log('🔍 Iniciando forgot password para:', email);
+
     const physio = await this.physiosRepository.findOne({
       where: { email },
     });
 
     if (!physio) {
+      console.log('❌ Usuario no encontrado:', email);
       return {
         message: 'Si el email existe, recibirás un enlace de recuperación',
       };
     }
+
+    console.log('✅ Usuario encontrado:', physio.email);
 
     const resetToken = randomBytes(32).toString('hex');
     const resetTokenExpires = new Date();
@@ -160,15 +165,18 @@ export class AuthService {
     physio.reset_password_token_expires = resetTokenExpires;
 
     await this.physiosRepository.save(physio);
+    console.log('✅ Token guardado en BD');
 
     try {
+      console.log('📧 Intentando enviar email...');
       await this.emailService.sendPasswordResetEmail(
         email,
         physio.name,
         resetToken,
       );
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.log('✅ Email enviado correctamente');
     } catch (error) {
+      console.error('❌ ERROR al enviar email:', error);
       physio.reset_password_token = null;
       physio.reset_password_token_expires = null;
       await this.physiosRepository.save(physio);
