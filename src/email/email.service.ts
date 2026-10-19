@@ -19,8 +19,7 @@ export class EmailService {
 
     const msg = {
       to: email,
-      from:
-        this.configService.get<string>('MAIL_USER') || 'elisaruizdev@gmail.com',
+      from: this.configService.getOrThrow<string>('MAIL_USER'),
       subject: 'Verifica tu cuenta de psoas',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -67,8 +66,7 @@ export class EmailService {
 
     const msg = {
       to: email,
-      from:
-        this.configService.get<string>('MAIL_USER') || 'elisaruizdev@gmail.com',
+      from: this.configService.getOrThrow<string>('MAIL_USER'),
       subject: 'Recuperar contraseña - psoas',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
