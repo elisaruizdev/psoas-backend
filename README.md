@@ -25,6 +25,24 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Autenticación
+
+Todas las rutas exigen `Authorization: Bearer <token>` (el `access_token` de `POST /auth/login`).
+Lo aplica un guard global (`src/auth/jwt-auth.guard.ts`, registrado como `APP_GUARD`):
+
+- Verifica la firma con `JWT_SECRET` (algoritmo fijo HS256) y la caducidad (`JWT_EXPIRATION`, 7 días por defecto).
+- Comprueba que el fisio siga existiendo y con estado `active`: una cuenta rechazada o
+  desactivada deja de funcionar al momento, aunque su token no haya caducado.
+- Deja el usuario en `request.user` (`id_physio`, `email`, `name`).
+- Cualquier fallo responde `401` con un mensaje genérico.
+
+Rutas públicas, marcadas con `@Public()` (`src/auth/public.decorator.ts`): todo `/auth`
+(registro, verificación de email, login, recuperar y restablecer contraseña) y `GET /`
+(comprobación de salud). Un test (`jwt-auth.guard.spec.ts`) falla si alguien marca como pública
+una ruta con datos de pacientes.
+
+Sin `JWT_SECRET` el backend no arranca.
+
 ## Project setup
 
 ```bash

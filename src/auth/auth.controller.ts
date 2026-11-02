@@ -1,10 +1,13 @@
 import { Controller, Post, Body, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { Public } from './public.decorator';
 import { RegisterDto } from './dto/register.dto/register.dto';
 import { LoginDto } from './dto/login.dto/login.dto';
 import { ForgotPasswordDto } from './dto/forget-password/forget-password.dto';
 import { ResetPasswordDto } from './dto/reset-password/reset-password.dto';
 
+// Login, registro, verificación de email y recuperación de contraseña: sin sesión, por definición.
+@Public()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
