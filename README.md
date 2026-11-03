@@ -43,6 +43,17 @@ una ruta con datos de pacientes.
 
 Sin `JWT_SECRET` el backend no arranca.
 
+## Secretos de los fisios
+
+- `password`, `verification_token`, `reset_password_token` y sus caducidades llevan
+  `select: false` en la entidad: TypeORM no los carga (tampoco en las relaciones de citas, sesiones
+  o dashboard) salvo que se pidan con `select`, como hace el login. Además llevan `@Exclude()` y
+  `ClassSerializerInterceptor` (en `src/app.setup.ts`) los quita de cualquier respuesta.
+- Los tokens de los emails se guardan como hash sha256 (`src/auth/email-token.ts`); el token en
+  claro solo va en el enlace del email. El de verificación se crea al aprobar la solicitud.
+- `PATCH /physios/:id` solo acepta datos de perfil (`UpdatePhysioDto`); cualquier otro campo da 400.
+- `physios-secretos.spec.ts` falla si un secreto vuelve a salir en una respuesta.
+
 ## Project setup
 
 ```bash

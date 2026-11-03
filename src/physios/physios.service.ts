@@ -7,6 +7,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Physios } from './entities/physios.entity';
 import { EmailService } from '../email/email.service';
+import { createEmailToken } from '../auth/email-token';
+import { UpdatePhysioDto } from './dto/update-physio.dto';
 
 @Injectable()
 export class PhysiosService {
@@ -33,19 +35,22 @@ export class PhysiosService {
       throw new BadRequestException('Este fisioterapeuta ya ha sido procesado');
     }
 
-    try {
-      if (!physio.verification_token) {
-        throw new BadRequestException(
-          'No hay token de verificación para este fisioterapeuta',
-        );
-      }
+    // El token se crea ahora y no al registrarse: así caduca 24 h después de aprobar, no
+    // 24 h después de pedir el alta. En la BD solo queda su hash (ver auth/email-token.ts).
+    const { token, hash } = createEmailToken();
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 24);
+    physio.verification_token = hash;
+    physio.verification_token_expires = expires;
+    await this.physiosRepository.save(physio);
 
+    try {
       console.log('Intentando enviar email a:', physio.email);
 
       await this.emailService.sendVerificationEmail(
         physio.email,
         physio.name,
-        physio.verification_token,
+        token,
       );
 
       console.log('Email enviado exitosamente');
@@ -96,7 +101,7 @@ export class PhysiosService {
     return physio;
   }
 
-  async update(id: number, updateData: Partial<Physios>): Promise<Physios> {
+  async update(id: number, updateData: UpdatePhysioDto): Promise<Physios> {
     const physio = await this.findOne(id);
 
     Object.assign(physio, updateData);

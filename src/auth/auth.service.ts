@@ -8,8 +8,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
 import { Physios } from '../physios/entities/physios.entity';
+import { createEmailToken, hashEmailToken } from './email-token';
 
 import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto/register.dto';
@@ -39,18 +39,14 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const verificationToken = randomBytes(32).toString('hex');
-    const verificationTokenExpires = new Date();
-    verificationTokenExpires.setHours(verificationTokenExpires.getHours() + 24);
-
+    // El token de verificación se crea al aprobar la solicitud (PhysiosService.approvePhysio):
+    // si se creara aquí, caducaría antes de que un administrador la revisara.
     const newPhysio = this.physiosRepository.create({
       email,
       password: hashedPassword,
       name,
       surname,
       phone,
-      verification_token: verificationToken,
-      verification_token_expires: verificationTokenExpires,
       is_verified: false,
       status: 'pending_verification',
     });
@@ -65,7 +61,8 @@ export class AuthService {
 
   async verifyEmail(token: string) {
     const physio = await this.physiosRepository.findOne({
-      where: { verification_token: token },
+      where: { verification_token: hashEmailToken(token) },
+      select: { id_physio: true, verification_token_expires: true },
     });
 
     if (!physio) {
@@ -98,6 +95,16 @@ export class AuthService {
 
     const physio = await this.physiosRepository.findOne({
       where: { email },
+      // `password` no se carga por defecto (select: false en la entidad): aquí sí hace falta.
+      select: {
+        id_physio: true,
+        email: true,
+        name: true,
+        surname: true,
+        is_verified: true,
+        status: true,
+        password: true,
+      },
     });
 
     if (!physio) {
@@ -157,11 +164,11 @@ export class AuthService {
 
     console.log('✅ Usuario encontrado:', physio.email);
 
-    const resetToken = randomBytes(32).toString('hex');
+    const { token: resetToken, hash: resetTokenHash } = createEmailToken();
     const resetTokenExpires = new Date();
     resetTokenExpires.setHours(resetTokenExpires.getHours() + 1);
 
-    physio.reset_password_token = resetToken;
+    physio.reset_password_token = resetTokenHash;
     physio.reset_password_token_expires = resetTokenExpires;
 
     await this.physiosRepository.save(physio);
@@ -193,7 +200,8 @@ export class AuthService {
     const { token, password } = resetPasswordDto;
 
     const physio = await this.physiosRepository.findOne({
-      where: { reset_password_token: token },
+      where: { reset_password_token: hashEmailToken(token) },
+      select: { id_physio: true, reset_password_token_expires: true },
     });
 
     if (!physio) {

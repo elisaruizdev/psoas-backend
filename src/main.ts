@@ -1,19 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
+import { configureApp } from './app.setup';
 import { seedDemoData } from './seed/demo-seed';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  configureApp(app);
 
   // CORS_ORIGINS admite varias URLs separadas por comas
   const corsOrigins = process.env.CORS_ORIGINS

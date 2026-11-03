@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 
 @Entity('physios')
 export class Physios {
@@ -68,16 +69,23 @@ export class Physios {
   })
   status: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  // Secretos: `select: false` hace que TypeORM no los cargue (tampoco en las relaciones de
+  // citas, sesiones o dashboard) salvo que se pidan con `select`. `@Exclude()` es la segunda
+  // barrera: si alguien los carga y devuelve la entidad, ClassSerializerInterceptor los quita.
+  @Exclude()
+  @Column({ type: 'varchar', length: 255, select: false })
   password: string;
 
   @Column({ default: false })
   is_verified: boolean;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  /** Hash del token del email de verificación (ver auth/email-token.ts), nunca el token. */
+  @Exclude()
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
   verification_token: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Exclude()
+  @Column({ type: 'timestamp', nullable: true, select: false })
   verification_token_expires: Date | null;
 
   @CreateDateColumn({ type: 'timestamp' })
@@ -86,9 +94,12 @@ export class Physios {
   @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  /** Hash del token del email de cambio de contraseña, nunca el token. */
+  @Exclude()
+  @Column({ type: 'varchar', length: 255, nullable: true, select: false })
   reset_password_token: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Exclude()
+  @Column({ type: 'timestamp', nullable: true, select: false })
   reset_password_token_expires: Date | null;
 }
