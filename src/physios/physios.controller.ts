@@ -8,6 +8,7 @@ import {
   Delete,
 } from '@nestjs/common';
 import { PhysiosService } from './physios.service';
+import { UpdatePhysioDto } from './dto/update-physio.dto';
 
 @Controller('physios')
 export class PhysiosController {
@@ -24,8 +25,10 @@ export class PhysiosController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateData: any) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateData: UpdatePhysioDto,
+  ) {
     return this.physiosService.update(id, updateData);
   }
 
